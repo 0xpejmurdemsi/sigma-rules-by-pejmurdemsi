@@ -1,0 +1,37 @@
+title: Suspicious PowerShell Encoded Command Usage (Enhanced)
+id: 178c8b64-9b9d-4b28-97fa-5fdd65f1b0ea
+description: |
+  Detects PowerShell process executions that contain Base64 encoded commands.
+  These are often used to hide the execution of malicious scripts.
+  This rule improves coverage by including common variations and using regex for case insensitivity.
+status: stable
+author: Mehmet Bekki
+date: 2025-07-08
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://learn.microsoft.com/en-us/powershell/
+  - https://posts.specterops.io/
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - detection.commandline
+  - powershell.obfuscation
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|re: '(?i)(-e|-enc|-encodedcommand)'
+  filter_legit_parent:
+    ParentImage|endswith:
+      - '\taskeng.exe'
+      - '\services.exe'
+      - '\winlogon.exe'
+  condition: selection and not filter_legit_parent
+falsepositives:
+  - Administrative scripts executed via scheduled tasks or services
+level: high
+note: |
+  This rule is designed to reduce false positives by excluding known benign parent processes,
+  such as scheduled tasks or services. Modify `filter_legit_parent` if needed for your environment.
